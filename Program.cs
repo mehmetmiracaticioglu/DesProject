@@ -8,102 +8,71 @@ class DESSample
 
     static void Main()
     {
-        Console.WriteLine("Lütfen 8 karakterli bir seri giriniz");
-        string key = Console.ReadLine();
+        string key;
+        do
+        {
+            Console.WriteLine("Lütfen 8 karakterli bir seri giriniz");
+             key = Console.ReadLine();
 
-
+        } while (key.Length != 8);
+              
         byte[] bytes = Encoding.ASCII.GetBytes(key);
-        Console.WriteLine(bytes.Length);
-        
-        byte[]key1 = Convert.FromBase64String(key);
-        
-        byte[] arr = {61,62,49,50,51,52,53,54};
+        DES DesKriptoAlg = DES.Create();
+        DesKriptoAlg.Key = bytes;
       
-        DES DESalg = DES.Create();
-        Console.WriteLine(Convert.ToBase64String(DESalg.Key));
-        DESalg.Key = bytes;
-         // byte [] arr = Convert.FromBase64String(key);
-        Console.WriteLine(DESalg.Key.Length);
-        byte[] imageArray = System.IO.File.ReadAllBytes("serdar.png");
-            string base64ImageRepresentation = Convert.ToBase64String(imageArray);
-        // Create a string to encrypt. //4 
-            string encryptFileName = "serdar.txt";
-        //Console.WriteLine(base64ImageRepresentation);
-        Console.WriteLine(Encoding.ASCII.GetString(DESalg.Key));
+
         
+        Console.WriteLine("Şifrelenmesini istediğiniz dosya adını giriniz");
+        string input = Console.ReadLine();
+        string[] words = input.Split('.');
+       
+        byte[] encryptedArray = File.ReadAllBytes(input);
+        string base64ImageRepresentation = Convert.ToBase64String(encryptedArray);
+        // Create a string to encrypt. //
+        string encryptDosyaAdi = "encrypted-"+words[0]+"."+ words[words.Length - 1];
+    
+        EncryptTextToFile(base64ImageRepresentation, encryptDosyaAdi, DesKriptoAlg.Key, DesKriptoAlg.IV);
 
-        // Encrypt text to a file using the file name, key, and IV.
-        EncryptTextToFile(base64ImageRepresentation, encryptFileName, DESalg.Key, DESalg.IV);
+        string Final = DecryptTextFromFile(encryptDosyaAdi, DesKriptoAlg.Key, DesKriptoAlg.IV);
 
-            // Decrypt the text from a file using the file name, key, and IV.
-            string Final = DecryptTextFromFile(encryptFileName, DESalg.Key, DESalg.IV);
-
-        // Display the decrypted string to the console.
-            imageArray = Convert.FromBase64String(Final);
-            File.WriteAllBytesAsync("serdar2r.png", imageArray);
-
-
+        encryptedArray = Convert.FromBase64String(Final);
+        File.WriteAllBytesAsync("Decrypted."+words[words.Length-1], encryptedArray);
     }
 
-    public static void EncryptTextToFile(String Data, String FileName, byte[] Key, byte[] IV)
+    public static void EncryptTextToFile(String Veri, String DosyaAdi, byte[] Key, byte[] IV)
     {
+                  
+            FileStream fStream = File.Open(DosyaAdi, FileMode.OpenOrCreate);
+     
+            DES DesKriptoAlg = DES.Create();
         
-            // Create or open the specified file.
-            FileStream fStream = File.Open(FileName, FileMode.OpenOrCreate);
-
-            // Create a new DES object.
-            DES DESalg = DES.Create();
-
-            // Create a CryptoStream using the FileStream
-            // and the passed key and initialization vector (IV).
-            CryptoStream cStream = new CryptoStream(fStream,
-                DESalg.CreateEncryptor(Key, IV),
-                CryptoStreamMode.Write);
-
-            // Create a StreamWriter using the CryptoStream.
-            StreamWriter sWriter = new StreamWriter(cStream);
-
-            // Write the data to the stream
-            // to encrypt it.
-            sWriter.WriteLine(Data);
-
-            // Close the streams and
-            // close the file.
-            sWriter.Close();
-            cStream.Close();
+            CryptoStream kriptoStream = new CryptoStream(fStream,DesKriptoAlg.CreateEncryptor(Key, IV),CryptoStreamMode.Write);
+       
+            StreamWriter streamYazici = new StreamWriter(kriptoStream);
+        
+            streamYazici.WriteLine(Veri);
+            streamYazici.Close();
+            kriptoStream.Close();
             fStream.Close();
         
     }
-
-    public static string DecryptTextFromFile(String FileName, byte[] Key, byte[] IV)
-    {
-          // Create or open the specified file.
-            FileStream fStream = File.Open(FileName, FileMode.OpenOrCreate);
-
-            // Create a new DES object.
-            DES DESalg = DES.Create();
-
-            // Create a CryptoStream using the FileStream
-            // and the passed key and initialization vector (IV).
-            CryptoStream cStream = new CryptoStream(fStream,
-                DESalg.CreateDecryptor(Key, IV),
-                CryptoStreamMode.Read);
-
-            // Create a StreamReader using the CryptoStream.
-            StreamReader sReader = new StreamReader(cStream);
-
-            // Read the data from the stream
-            // to decrypt it.
-            string val = sReader.ReadLine();
-
-            // Close the streams and
-            // close the file.
-            sReader.Close();
-            cStream.Close();
+    public static string DecryptTextFromFile(String DosyaAdi, byte[] Key, byte[] IV)
+    {         
+            FileStream fStream = File.Open(DosyaAdi, FileMode.OpenOrCreate);
+         
+            DES DesKriptoAlg = DES.Create();
+         
+            CryptoStream kriptoStream = new CryptoStream(fStream,DesKriptoAlg.CreateDecryptor(Key, IV),CryptoStreamMode.Read);
+       
+            StreamReader StreamOkuyucu = new StreamReader(kriptoStream);
+      
+            string Sonuc = StreamOkuyucu.ReadLine();
+       
+            StreamOkuyucu.Close();
+            kriptoStream.Close();
             fStream.Close();
-
-            // Return the string.
-            return val;
+       
+            return Sonuc;
        
     }
 }
